@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
-// Definir el esquema o la estructura que tedran los documentos en Mongo DB
+// Definir el esquema o la estructura que tendran los documentos en Mongo DB
 const alumnoSchema = new mongoose.Schema({
-    nombre: {
+    dni: {
         type: String,
-        require: [ true, 'El nombre del campo es obligatorio']
+        required: true,
+        unique: true 
     },
-
     nombre: { 
         type: String, 
         required: true 
@@ -30,4 +30,5 @@ const alumnoSchema = new mongoose.Schema({
 }, {
     timestamps: true // Agregar fecha de creación y actualización automáticamente
 });
+
 module.exports = mongoose.model('Alumno', alumnoSchema);
