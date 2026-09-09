@@ -15,12 +15,14 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('¡Conectado a la base de datos de MongoDB Atlas!'))
     .catch((error) => console.error('Error al conectar a MongoDB:', error));
 
-// Rutas de la aplicación
+
 // Importamos las rutas del recurso producto
 const alumnosRoutes = require('./routes/alumnos.routes');
+const usuariosRoutes = require('./routes/usuarios.routes');
 
 // Definimos el sufijo de ruta que queremos usar en la url
 app.use('/api/alumnos', alumnosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // 4. ruta de prueba (método GET)
 
