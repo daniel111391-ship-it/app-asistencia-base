@@ -1,65 +1,91 @@
-const Alumno = require('../models/alumno.models'); // Importamos el modelo real de la base de datos
+const Alumno = require('../models/alumno.models');
 
-// GET: Obtener todos los alumnos
+// 1. Obtener todos los alumnos (con opción a filtrar por curso)
 exports.obtenerAlumnos = async (req, res) => {
     try {
-        const alumnos = await Alumno.find();
-        res.status(200).json({ ok: true, datos: alumnos });
+    // Si el preceptor busca un curso específico (ej: ?curso=1ro 1ra), lo filtramos
+    const filtro = req.query.curso ? { curso: req.query.curso } : {};
+    const alumnos = await Alumno.find(filtro);
+    
+    res.json(alumnos);
     } catch (error) {
-        res.status(500).json({ ok: false, mensaje: 'Error al obtener alumnos', error: error.message });
+    console.error(error);
+    res.status(500).json({ msg: 'Error al obtener los alumnos' });
     }
 };
 
-// GET: Obtener un alumno por DNI
-exports.obtenerAlumnoPorDni = async (req, res) => {
-    try {
-        const alumno = await Alumno.findOne({ dni: req.params.dni });
-        if (!alumno) {
-            return res.status(404).json({ ok: false, mensaje: 'Alumno no encontrado' });
-        }
-        res.status(200).json({ ok: true, datos: alumno });
-    } catch (error) {
-        res.status(500).json({ ok: false, mensaje: 'Error en el servidor', error: error.message });
-    }
-};
-
-// POST: Agregar un nuevo alumno
+// 2. Dar de alta un nuevo alumno
 exports.crearAlumno = async (req, res) => {
     try {
-        const nuevoAlumno = new Alumno(req.body);
-        await nuevoAlumno.save();
-        res.status(201).json({ ok: true, mensaje: 'Alumno registrado en Atlas', datos: nuevoAlumno });
+    const nuevoAlumno = new Alumno(req.body);
+    await nuevoAlumno.save();
+    res.status(201).json(nuevoAlumno);
     } catch (error) {
-        res.status(500).json({ ok: false, mensaje: 'Error al registrar', error: error.message });
+    console.error(error);
+    res.status(400).json({ msg: 'Error al crear el alumno' });
     }
 };
 
-// PUT: Actualizar alumno
+// 3. Tomar Asistencia (El equivalente a "reservarClase" del profe)
+exports.registrarAsistencia = async (req, res) => {
+    try {
+    const { id } = req.params;
+    const { presente, justificada } = req.body; 
+
+    const alumno = await Alumno.findById(id);
+
+    if (!alumno) {
+        return res.status(404).json({ msg: 'Alumno no encontrado' });
+    }
+
+    if (presente) {
+      // Si el alumno vino, guardamos la fecha de hoy en su historial
+        alumno.fechasAsistencia.push(new Date());
+        alumno.presente = true;
+    } else {
+      // Si faltó, sumamos la falta a su contador específico
+        alumno.presente = false;
+        if (justificada) {
+        alumno.faltasJustificadas += 1;
+        } else {
+        alumno.faltasInjustificadas += 1;
+        }
+    }
+
+    await alumno.save();
+    res.json({ msg: 'Asistencia registrada con éxito', alumno });
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: 'Error al registrar la asistencia' });
+    }
+};
+
+// 4. Actualizar datos generales del alumno
 exports.actualizarAlumno = async (req, res) => {
     try {
-        const alumnoActualizado = await Alumno.findOneAndUpdate(
-            { dni: req.params.dni },
-            req.body,
-            { new: true }
-        );
-        if (!alumnoActualizado) {
-            return res.status(404).json({ ok: false, mensaje: 'Alumno no encontrado' });
-        }
-        res.status(200).json({ ok: true, mensaje: 'Datos actualizados en Atlas', datos: alumnoActualizado });
+    const { id } = req.params;
+    const alumnoActualizado = await Alumno.findByIdAndUpdate(id, req.body, { new: true });
+    if (!alumnoActualizado) {
+        return res.status(404).json({ msg: 'Alumno no encontrado' });
+    }
+    res.json({ msg: 'Datos actualizados correctamente', alumno: alumnoActualizado });
     } catch (error) {
-        res.status(500).json({ ok: false, mensaje: 'Error al actualizar', error: error.message });
+    console.error(error);
+    res.status(500).json({ msg: 'Error al actualizar datos' });
     }
 };
 
-// DELETE: Eliminar alumno
+// 5. Eliminar un alumno del sistema
 exports.eliminarAlumno = async (req, res) => {
     try {
-        const alumnoEliminado = await Alumno.findOneAndDelete({ dni: req.params.dni });
-        if (!alumnoEliminado) {
-            return res.status(404).json({ ok: false, mensaje: 'Alumno no encontrado' });
-        }
-        res.status(200).json({ ok: true, mensaje: 'Alumno eliminado de Atlas correctamente' });
+    const { id } = req.params;
+    const alumnoEliminado = await Alumno.findByIdAndDelete(id);
+    if (!alumnoEliminado) {
+        return res.status(404).json({ msg: 'Alumno no encontrado' });
+    }
+    res.json({ msg: 'Alumno eliminado correctamente' });
     } catch (error) {
-        res.status(500).json({ ok: false, mensaje: 'Error al eliminar', error: error.message });
+    console.error(error);
+    res.status(500).json({ msg: 'Error al eliminar el alumno' });
     }
 };

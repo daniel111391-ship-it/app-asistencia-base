@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
-
-// Impartar el controlador con las funciones de métodos
 const alumnosController = require('../controllers/alumnos.controller');
 
-// Definir las rutas con los endpoints mapeados con los métodos HTTP correspondientes
+// 1. Obtener todos los alumnos (o filtrar por curso)
+router.get('/', alumnosController.obtenerAlumnos);
 
-router.get('/', alumnosController.obtenerAlumnos); // GET - para ver todos los alumnos
-router.get('/:dni', alumnosController.obtenerAlumnoPorDni); // GET - obtener uno específico
-router.post('/', alumnosController.crearAlumno);            // POST - crear alumno
-router.put('/:dni', alumnosController.actualizarAlumno);    // PUT - actualizar por DNI
-router.delete('/:dni', alumnosController.eliminarAlumno);   // DELETE - eliminar por DNI
+// 2. Crear un nuevo alumno
+router.post('/', alumnosController.crearAlumno);
+
+// 3. Registrar asistencia diaria (Presente o Ausente)
+router.put('/:id/asistencia', alumnosController.registrarAsistencia);
+
+// 4. Actualizar datos de un alumno
+router.put('/:id', alumnosController.actualizarAlumno);
+
+// 5. Eliminar un alumno
+router.delete('/:id', alumnosController.eliminarAlumno);
 
 module.exports = router;
