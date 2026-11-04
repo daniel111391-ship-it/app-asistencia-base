@@ -24,6 +24,10 @@ const usuarioSchema = new mongoose.Schema({
         enum: ['admin', 'preceptor', 'alumno'],
         default: 'alumno'
     },
+    // Acá agregamos el DNI
+    dni: {
+        type: String
+    },
     activo: {
         type: Boolean,
         default: true

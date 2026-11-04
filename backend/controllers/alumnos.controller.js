@@ -17,46 +17,45 @@ exports.obtenerAlumnos = async (req, res) => {
 // 2. Dar de alta un nuevo alumno
 exports.crearAlumno = async (req, res) => {
     try {
-    const nuevoAlumno = new Alumno(req.body);
-    await nuevoAlumno.save();
-    res.status(201).json(nuevoAlumno);
+        const nuevoAlumno = new Alumno(req.body);
+        await nuevoAlumno.save();
+        res.status(201).json(nuevoAlumno);
     } catch (error) {
-    console.error(error);
-    res.status(400).json({ msg: 'Error al crear el alumno' });
+        console.error(error);
+        res.status(400).json({ msg: 'Error al crear el alumno', detalle: error.message });
     }
 };
 
-// 3. Tomar Asistencia (El equivalente a "reservarClase" del profe)
+// 3. Tomar Asistencia (Presente, Tardanza, Falta Justificada, Ausente)
 exports.registrarAsistencia = async (req, res) => {
     try {
-    const { id } = req.params;
-    const { presente, justificada } = req.body; 
+        const { id } = req.params;
+        const { presente, justificada, tardanza } = req.body; 
 
-    const alumno = await Alumno.findById(id);
+        const alumno = await Alumno.findById(id);
+        if (!alumno) return res.status(404).json({ msg: 'Alumno no encontrado' });
 
-    if (!alumno) {
-        return res.status(404).json({ msg: 'Alumno no encontrado' });
-    }
-
-    if (presente) {
-      // Si el alumno vino, guardamos la fecha de hoy en su historial
-        alumno.fechasAsistencia.push(new Date());
-        alumno.presente = true;
-    } else {
-      // Si faltó, sumamos la falta a su contador específico
-        alumno.presente = false;
-        if (justificada) {
-        alumno.faltasJustificadas += 1;
+        if (tardanza) {
+            alumno.presente = true;
+            alumno.tardanzas = (alumno.tardanzas || 0) + 1;
+            alumno.fechasAsistencia.push(new Date());
+        } else if (presente) {
+            alumno.presente = true;
+            alumno.fechasAsistencia.push(new Date());
         } else {
-        alumno.faltasInjustificadas += 1;
+            alumno.presente = false;
+            if (justificada) {
+                alumno.faltasJustificadas += 1;
+            } else {
+                alumno.faltasInjustificadas += 1;
+            }
         }
-    }
 
-    await alumno.save();
-    res.json({ msg: 'Asistencia registrada con éxito', alumno });
+        await alumno.save();
+        res.json({ msg: 'Asistencia registrada con éxito', alumno });
     } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: 'Error al registrar la asistencia' });
+        console.error(error);
+        res.status(500).json({ msg: 'Error al registrar la asistencia' });
     }
 };
 
@@ -87,5 +86,17 @@ exports.eliminarAlumno = async (req, res) => {
     } catch (error) {
     console.error(error);
     res.status(500).json({ msg: 'Error al eliminar el alumno' });
+    }
+};
+
+// Buscar alumno por DNI para el panel del alumno
+exports.obtenerAlumnoPorDni = async (req, res) => {
+    try {
+        const alumno = await Alumno.findOne({ dni: req.params.dni });
+        if (!alumno) return res.status(404).json({ msg: 'Alumno no encontrado' });
+        res.json(alumno);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al buscar por DNI' });
     }
 };
